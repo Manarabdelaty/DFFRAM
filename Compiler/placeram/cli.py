@@ -57,7 +57,7 @@ class Placer:
     DECAP_CELL_RX = r"sky130_fd_sc_hd__decap_(\d+)"
     FILL_CELL_RX = r"sky130_fd_sc_hd__fill_(\d+)"
 
-    SUPPORTED_WORD_COUNTS = [8, 32, 128, 512, 2048]
+    SUPPORTED_WORD_COUNTS = [8, 32, 128, 256, 512, 1024, 2048]
 
     def __init__(self, lef, tech_lef, df, word_count, word_width):
         if word_width != 32:
@@ -117,7 +117,9 @@ class Placer:
 
         includes = {32:r"\bBANK_B(\d+)\b",
                     128: r"\bBANK128_B(\d+)\b",
-                    512: r"\bBANK512_B(\d+)\b"}
+                    256: r"\bBANK256_B(\d+)\b",
+                    512: r"\bBANK512_B(\d+)\b",
+                    1024: r"\bBANK1024_B(\d+)\b"}
 
         # TODO: E X P A N D
         if word_count == 8:
@@ -127,9 +129,15 @@ class Placer:
         elif word_count == 128:
             self.hierarchy = \
             HigherLevelPlaceable(includes[32], self.instances)
+        elif word_count == 256:
+            self.hierarchy = \
+            HigherLevelPlaceable(includes[128], self.instances)
         elif word_count == 512:
             self.hierarchy = \
             HigherLevelPlaceable(includes[128], self.instances)
+        elif word_count == 1024:
+            self.hierarchy = \
+            HigherLevelPlaceable(includes[512], self.instances)
         elif word_count == 2048:
             self.hierarchy = \
             HigherLevelPlaceable(includes[512], self.instances)

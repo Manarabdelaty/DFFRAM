@@ -560,7 +560,7 @@ class Mux(Placeable): # Pretty generic, only constraint is the number of selbufs
         raw_selbufs = {}
         raw_muxes = {}
 
-        selbuf = r"\bSEL(\d*)?BUF\\\[(\d+)\\\]"
+        selbuf = r"\bSEL(\d*)BUF\\\[(\d+)\\\]"
         mux = r"\bMUX(\d+)\\\[(\d+)\\\]"
 
         for instance in instances:
@@ -601,6 +601,8 @@ class HigherLevelPlaceable(Placeable):
         # TODO: Generalize beyond Block
         self.clkbuf = None
         self.enbuf = None
+        self.selbuf = None
+        self.selinv = None
         raw_blocks = {}
         raw_decoder_ands = {}
 
@@ -609,6 +611,8 @@ class HigherLevelPlaceable(Placeable):
         raw_abufs = {}
 
         raw_domux = []
+        raw_selbuf = []
+        raw_selinv = []
 
         clkbuf = r"\bCLKBUF\b"
         enbuf = r"\bENBUF\b"
@@ -617,6 +621,8 @@ class HigherLevelPlaceable(Placeable):
         decoder_and = r"\bDEC\.AND(\d+)\b"
         dibuf = r"\bDIBUF\\\[(\d+)\\\]"
         domux = r"\bDoMUX\b"
+        selbuf = r"\bSELBUF\b"
+        selinv = r"\bSELINV\b"
         webuf = r"\bWEBUF\\\[(\d+)\\\]"
         abuf = r"\bABUF\\\[(\d+)\\\]"
 
@@ -626,6 +632,12 @@ class HigherLevelPlaceable(Placeable):
                 i = int(block_match[1])
                 raw_blocks[i] = raw_blocks.get(i) or []
                 raw_blocks[i].append(instance)
+            elif domux_match := re.search(domux, n):
+                raw_domux.append(instance)
+            elif selbuf_match := re.search(selbuf, n):
+                self.selbuf = instance
+            elif selinv_match := re.search(selinv, n):
+                self.selinv = instance
             elif decoder_and_match := re.search(decoder_and, n):
                 i = int(decoder_and_match[1])
                 raw_decoder_ands[i] = instance
@@ -642,8 +654,6 @@ class HigherLevelPlaceable(Placeable):
                 raw_abufs[i] = instance
             elif enbuf_match := re.search(enbuf, n):
                 self.enbuf = instance
-            elif domux_match := re.search(domux, n):
-                raw_domux.append(instance)
             else:
                 raise DataError("Unknown element in %s: %s" % (type(self).__name__, n))
         self.blocks = d2a({k: constructor[inner_re](v) for k, v in
@@ -740,6 +750,8 @@ class HigherLevelPlaceable(Placeable):
         last_column = [
             self.clkbuf,
             self.enbuf,
+            self.selbuf,
+            self.selinv,
             *self.webufs,
             *self.abufs,
             *self.decoder_ands
